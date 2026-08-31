@@ -56,7 +56,6 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         freecore$announcementPage = 0;
         freecore$announcementScroll = 0;
         freecore$lastAnnouncementIndex = -1;
-        freecore$updateDialogShown = false;
         freecore$rebuildButtons((TitleScreen) (Object) this);
     }
 
