@@ -283,8 +283,8 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
     private static void scheduleJarReplacement(Path target, Path pending) throws IOException {
         Path script = pending.resolveSibling("freecore-client-update.ps1");
         String ps = "$ErrorActionPreference='SilentlyContinue'\n"
-                + "$pid=" + ProcessHandle.current().pid() + "\n"
-                + "while (Get-Process -Id $pid -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
+                + "$gameProcessId=" + ProcessHandle.current().pid() + "\n"
+                + "while (Get-Process -Id $gameProcessId -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
                 + "$target='" + psQuote(target.toAbsolutePath().toString()) + "'\n"
                 + "$pending='" + psQuote(pending.toAbsolutePath().toString()) + "'\n"
                 + "for($i=0;$i -lt 30;$i++){ try { Move-Item -LiteralPath $pending -Destination $target -Force; if(Test-Path -LiteralPath $target){ break } } catch {} Start-Sleep -Milliseconds 500 }\n"
