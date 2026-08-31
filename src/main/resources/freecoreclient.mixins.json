@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "package": "cc.freecore.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "TitleScreenMixin26",
+    "PauseScreenMixin26",
+    "SettingsBackgroundMixin26",
+    "MinecraftTitleMixin26",
+    "LoadingOverlayMixin26",
+    "LevelLoadingScreenMixin26",
+    "ProgressScreenMixin26",
+    "GenericMessageScreenMixin26"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

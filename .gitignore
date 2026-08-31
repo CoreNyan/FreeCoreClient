@@ -1,0 +1,14 @@
+.gradle/
+build/
+logs/
+config/
+*.log
+*.log.gz
+*.tmp
+*.previous
+*.png
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+run/
+out/
+

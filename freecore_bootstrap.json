@@ -1,0 +1,6 @@
+{
+  "remote_config_url": "https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/freecore_config.json",
+  "client_update_enabled": true,
+  "client_update_api_url": "https://api.github.com/repos/CoreNyan/FreeCoreClient/releases/latest",
+  "client_update_asset_prefix": "freecore-client"
+}
