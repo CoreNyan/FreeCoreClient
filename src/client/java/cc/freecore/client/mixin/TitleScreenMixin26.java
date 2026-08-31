@@ -353,6 +353,11 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
             freecore$layoutHeight = height;
         }
         var cfg = FreeCoreClientRuntime.getConfig();
+        String updateNotice = FreeCoreClientRuntime.getClientUpdateNotice();
+        if (updateNotice != null && !updateNotice.isBlank()) {
+            graphics.centeredText(cc.freecore.client.FreeCoreText.font(),
+                    cc.freecore.client.FreeCoreText.component(updateNotice), width / 2, Math.max(12, height - 24), 0xffffd166);
+        }
         var announcements = cfg.announcements;
         if (announcements == null || announcements.isEmpty()) return;
         int announcementIndex = freecore$announcementIndex(cfg, announcements.size());
