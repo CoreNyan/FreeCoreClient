@@ -12,7 +12,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +35,10 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
      *  server chain here keeps hot loading working on those runtimes. */
     private static final HttpClient HTTP = imageHttpClient();
     private static volatile FreeCoreConfig config = FreeCoreConfig.defaults();
+    private static volatile String clientUpdateNotice = "";
 
     public static FreeCoreConfig getConfig() { return config; }
+    public static String getClientUpdateNotice() { return clientUpdateNotice; }
 
     public static void renderBackground(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int width, int height) {
         BackgroundManager.render(graphics, width, height);
@@ -39,8 +47,10 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         CompletableFuture.supplyAsync(this::loadBootstrap)
-                .thenCompose(url -> {
+                .thenCompose(bootstrap -> {
+                    String url = bootstrap == null ? null : bootstrap.remoteConfigUrl;
                     System.out.println("[FreeCoreClient] bootstrap remote_config_url=" + url);
+                    checkForClientUpdate(bootstrap);
                     if (url == null || url.isBlank() || url.contains("YOUR_")) {
                         return CompletableFuture.completedFuture(loadLocalConfig());
                     }
@@ -146,7 +156,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
         return null;
     }
 
-    private String loadBootstrap() {
+    private BootstrapConfig loadBootstrap() {
         try {
             Path game = FabricLoader.getInstance().getGameDir();
             Path path = game.resolve("config/freecore_bootstrap.json");
@@ -156,9 +166,134 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                 return null;
             }
             BootstrapConfig bootstrap = GSON.fromJson(Files.readString(path), BootstrapConfig.class);
-            return bootstrap == null ? null : bootstrap.remoteConfigUrl;
+            return bootstrap;
         } catch (Exception e) { System.err.println("[FreeCoreClient] bootstrap read failed: " + e); return null; }
     }
+
+    /** Checks GitHub Releases off-thread and schedules a safe post-exit JAR replacement. */
+    private void checkForClientUpdate(BootstrapConfig bootstrap) {
+        if (bootstrap == null || !bootstrap.clientUpdateEnabled
+                || bootstrap.clientUpdateApiUrl == null || bootstrap.clientUpdateApiUrl.isBlank()
+                || bootstrap.clientUpdateApiUrl.contains("YOUR_")) return;
+        CompletableFuture.runAsync(() -> {
+            try {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(bootstrap.clientUpdateApiUrl))
+                        .header("Accept", "application/vnd.github+json")
+                        .header("User-Agent", "FreeCoreClient/" + currentModVersion())
+                        .timeout(Duration.ofSeconds(15)).GET().build();
+                HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                if (response.statusCode() / 100 != 2) throw new IOException("GitHub Releases HTTP " + response.statusCode());
+                JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
+                String remoteVersion = release.has("tag_name") ? release.get("tag_name").getAsString() : "";
+                String currentVersion = currentModVersion();
+                if (compareVersions(remoteVersion, currentVersion) <= 0) {
+                    System.out.println("[FreeCoreClient] client JAR is up to date: " + currentVersion);
+                    return;
+                }
+                JsonObject asset = selectJarAsset(release.getAsJsonArray("assets"), bootstrap.clientUpdateAssetPrefix);
+                if (asset == null) throw new IOException("no matching JAR asset in release " + remoteVersion);
+                Path target = installedJarPath();
+                if (target == null) throw new IOException("installed FreeCore JAR path is unavailable");
+                String downloadUrl = asset.get("browser_download_url").getAsString();
+                HttpRequest download = HttpRequest.newBuilder(URI.create(downloadUrl))
+                        .header("Accept", "application/octet-stream")
+                        .header("User-Agent", "FreeCoreClient/" + currentVersion)
+                        .timeout(Duration.ofSeconds(60)).GET().build();
+                HttpResponse<byte[]> bytes = HTTP.send(download, HttpResponse.BodyHandlers.ofByteArray());
+                if (bytes.statusCode() / 100 != 2 || bytes.body().length < 1024) {
+                    throw new IOException("JAR download failed: HTTP " + bytes.statusCode());
+                }
+                Path game = FabricLoader.getInstance().getGameDir();
+                Path pending = game.resolve("config/freecore-client-update-" + System.currentTimeMillis() + ".jar");
+                Files.createDirectories(pending.getParent());
+                Files.write(pending, bytes.body());
+                if (!isValidFreeCoreJar(pending)) {
+                    Files.deleteIfExists(pending);
+                    throw new IOException("downloaded file is not a valid FreeCoreClient JAR");
+                }
+                scheduleJarReplacement(target, pending);
+                clientUpdateNotice = "检测到客户端新版本 " + remoteVersion + "，已下载；退出后自动更新，请重新启动";
+                System.out.println("[FreeCoreClient] " + clientUpdateNotice);
+            } catch (Exception error) {
+                System.err.println("[FreeCoreClient] binary update check failed: " + error.getMessage());
+            }
+        });
+    }
+
+    private static JsonObject selectJarAsset(JsonArray assets, String prefix) {
+        if (assets == null) return null;
+        String wanted = prefix == null ? "freecore-client" : prefix.trim().toLowerCase(java.util.Locale.ROOT);
+        for (var element : assets) {
+            if (!element.isJsonObject()) continue;
+            JsonObject asset = element.getAsJsonObject();
+            String name = asset.has("name") ? asset.get("name").getAsString().toLowerCase(java.util.Locale.ROOT) : "";
+            if (name.endsWith(".jar") && (wanted.isBlank() || name.startsWith(wanted))) return asset;
+        }
+        return null;
+    }
+
+    private static String currentModVersion() {
+        try {
+            return FabricLoader.getInstance().getModContainer("freecoreclient")
+                    .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                    .orElse("0.0.0");
+        } catch (RuntimeException ignored) { return "0.0.0"; }
+    }
+
+    private static int compareVersions(String left, String right) {
+        String a = left == null ? "" : left.replaceFirst("^[vV]", "");
+        String b = right == null ? "" : right.replaceFirst("^[vV]", "");
+        String[] ap = a.split("[.-]");
+        String[] bp = b.split("[.-]");
+        int count = Math.max(ap.length, bp.length);
+        for (int i = 0; i < count; i++) {
+            int av = i < ap.length ? numericPart(ap[i]) : 0;
+            int bv = i < bp.length ? numericPart(bp[i]) : 0;
+            if (av != bv) return Integer.compare(av, bv);
+        }
+        return a.compareToIgnoreCase(b);
+    }
+
+    private static int numericPart(String value) {
+        String digits = value == null ? "" : value.replaceAll("[^0-9].*", "");
+        if (digits.isBlank()) return 0;
+        try { return Integer.parseInt(digits); } catch (NumberFormatException ignored) { return 0; }
+    }
+
+    private static Path installedJarPath() {
+        try {
+            var location = FreeCoreClientRuntime.class.getProtectionDomain().getCodeSource().getLocation();
+            Path path = Paths.get(location.toURI());
+            if (Files.isRegularFile(path) && path.toString().toLowerCase(java.util.Locale.ROOT).endsWith(".jar")) return path;
+        } catch (Exception ignored) { }
+        return null;
+    }
+
+    private static boolean isValidFreeCoreJar(Path path) {
+        try (JarFile jar = new JarFile(path.toFile())) {
+            JarEntry entry = jar.getJarEntry("fabric.mod.json");
+            if (entry == null) return false;
+            try (var reader = new java.io.InputStreamReader(jar.getInputStream(entry), StandardCharsets.UTF_8)) {
+                JsonObject metadata = JsonParser.parseReader(reader).getAsJsonObject();
+                return metadata.has("id") && "freecoreclient".equals(metadata.get("id").getAsString());
+            }
+        } catch (Exception ignored) { return false; }
+    }
+
+    private static void scheduleJarReplacement(Path target, Path pending) throws IOException {
+        Path script = pending.resolveSibling("freecore-client-update.ps1");
+        String ps = "$ErrorActionPreference='SilentlyContinue'\n"
+                + "$pid=" + ProcessHandle.current().pid() + "\n"
+                + "while (Get-Process -Id $pid -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
+                + "$target='" + psQuote(target.toAbsolutePath().toString()) + "'\n"
+                + "$pending='" + psQuote(pending.toAbsolutePath().toString()) + "'\n"
+                + "for($i=0;$i -lt 30;$i++){ try { Move-Item -LiteralPath $pending -Destination $target -Force; if(Test-Path -LiteralPath $target){ break } } catch {} Start-Sleep -Milliseconds 500 }\n"
+                + "Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force\n";
+        Files.writeString(script, ps, StandardCharsets.UTF_8);
+        new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script.toString()).start();
+    }
+
+    private static String psQuote(String value) { return value.replace("'", "''"); }
 
     private CompletableFuture<FreeCoreConfig> loadRemote(String url) {
         if (url == null || url.isBlank() || url.contains("YOUR_")) return CompletableFuture.completedFuture(null);
@@ -214,9 +349,9 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
             };
             SSLContext ssl = SSLContext.getInstance("TLS");
             ssl.init(null, new javax.net.ssl.TrustManager[]{trust}, new SecureRandom());
-            return HttpClient.newBuilder().sslContext(ssl).connectTimeout(Duration.ofSeconds(8)).build();
+            return HttpClient.newBuilder().sslContext(ssl).followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
         } catch (Exception e) {
-            return HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
+            return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
         }
     }
 
