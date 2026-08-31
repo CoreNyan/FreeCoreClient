@@ -24,6 +24,7 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
     private int freecore$announcementPage = 0;
     private Button freecore$announcementPrev;
     private Button freecore$announcementNext;
+    private boolean freecore$updateDialogShown;
     private int freecore$announcementScroll;
     private int freecore$announcementPanelX, freecore$announcementPanelY, freecore$announcementPanelW, freecore$announcementPanelH;
     private int freecore$lastAnnouncementIndex = -1;
@@ -55,6 +56,7 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         freecore$announcementPage = 0;
         freecore$announcementScroll = 0;
         freecore$lastAnnouncementIndex = -1;
+        freecore$updateDialogShown = false;
         freecore$rebuildButtons((TitleScreen) (Object) this);
     }
 
@@ -354,9 +356,13 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         }
         var cfg = FreeCoreClientRuntime.getConfig();
         String updateNotice = FreeCoreClientRuntime.getClientUpdateNotice();
-        if (updateNotice != null && !updateNotice.isBlank()) {
-            graphics.centeredText(cc.freecore.client.FreeCoreText.font(),
-                    cc.freecore.client.FreeCoreText.component(updateNotice), width / 2, Math.max(12, height - 24), 0xffffd166);
+        if (!freecore$updateDialogShown && updateNotice != null && !updateNotice.isBlank()) {
+            freecore$updateDialogShown = true;
+            net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+            minecraft.setScreenAndShow(new net.minecraft.client.gui.screens.AlertScreen(
+                    () -> minecraft.setScreenAndShow(screen),
+                    cc.freecore.client.FreeCoreText.component(updateNotice),
+                    cc.freecore.client.FreeCoreText.component("知道了")));
         }
         var announcements = cfg.announcements;
         if (announcements == null || announcements.isEmpty()) return;

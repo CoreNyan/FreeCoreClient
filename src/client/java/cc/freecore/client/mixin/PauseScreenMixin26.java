@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.Holder;
+import net.minecraft.server.dialog.Dialog;
+import java.util.Optional;
 
 @Mixin(PauseScreen.class)
 public abstract class PauseScreenMixin26 extends net.minecraft.client.gui.screens.Screen {
@@ -45,6 +48,19 @@ public abstract class PauseScreenMixin26 extends net.minecraft.client.gui.screen
         return false;
     }
     protected PauseScreenMixin26(Component title) { super(title); }
+
+    /**
+     * Vanilla 26.2 dereferences minecraft.player while rebuilding the pause
+     * menu. During a world transition or a resize the screen can briefly exist
+     * after the player has been cleared, which otherwise crashes the client.
+     */
+    @Inject(method = "getCustomAdditions", at = @At("HEAD"), cancellable = true, require = 0)
+    private void freecore$skipCustomAdditionsWithoutPlayer(
+            CallbackInfoReturnable<Optional<? extends Holder<Dialog>>> cir) {
+        if (net.minecraft.client.Minecraft.getInstance().player == null) {
+            cir.setReturnValue(Optional.empty());
+        }
+    }
     @Inject(method = "init", at = @At("TAIL"))
     private void freecore$injectButtons(CallbackInfo ci) {
         PauseScreen screen = (PauseScreen) (Object) this;
