@@ -360,7 +360,10 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
             freecore$updateDialogShown = true;
             net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
             minecraft.setScreenAndShow(new net.minecraft.client.gui.screens.AlertScreen(
-                    () -> minecraft.setScreenAndShow(screen),
+                    () -> {
+                        FreeCoreClientRuntime.clearClientUpdateNotice();
+                        minecraft.setScreenAndShow(screen);
+                    },
                     cc.freecore.client.FreeCoreText.component(updateNotice),
                     cc.freecore.client.FreeCoreText.component("知道了")));
         }

@@ -39,6 +39,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
 
     public static FreeCoreConfig getConfig() { return config; }
     public static String getClientUpdateNotice() { return clientUpdateNotice; }
+    public static void clearClientUpdateNotice() { clientUpdateNotice = ""; }
 
     public static void renderBackground(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int width, int height) {
         BackgroundManager.render(graphics, width, height);
