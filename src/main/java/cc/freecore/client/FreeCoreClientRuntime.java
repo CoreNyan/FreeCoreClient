@@ -182,7 +182,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                         .header("Accept", "application/vnd.github+json")
                         .header("User-Agent", "FreeCoreClient/" + currentModVersion())
                         .timeout(Duration.ofSeconds(15)).GET().build();
-                HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
                 if (response.statusCode() / 100 != 2) throw new IOException("GitHub Releases HTTP " + response.statusCode());
                 JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
                 String remoteVersion = release.has("tag_name") ? release.get("tag_name").getAsString() : "";
@@ -206,7 +206,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                         .header("Accept", "application/octet-stream")
                         .header("User-Agent", "FreeCoreClient/" + currentVersion)
                         .timeout(Duration.ofSeconds(60)).GET().build();
-                HttpResponse<byte[]> bytes = HTTP.send(download, HttpResponse.BodyHandlers.ofByteArray());
+                HttpResponse<byte[]> bytes = sendWithRetry(download, HttpResponse.BodyHandlers.ofByteArray());
                 if (bytes.statusCode() / 100 != 2 || bytes.body().length < 1024) {
                     throw new IOException("JAR download failed: HTTP " + bytes.statusCode());
                 }
@@ -303,6 +303,29 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
 
     private static String psQuote(String value) { return value.replace("'", "''"); }
 
+    /** GitHub occasionally closes a TLS connection before the API response is
+     * received. Retry transient transport failures on the existing worker
+     * thread so startup and rendering remain non-blocking. */
+    private static <T> HttpResponse<T> sendWithRetry(HttpRequest request,
+                                                      HttpResponse.BodyHandler<T> handler)
+            throws IOException, InterruptedException {
+        IOException last = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                HttpResponse<T> response = HTTP.send(request, handler);
+                if (response.statusCode() >= 500 && attempt < 2) {
+                    Thread.sleep(400L * (attempt + 1));
+                    continue;
+                }
+                return response;
+            } catch (IOException error) {
+                last = error;
+                if (attempt < 2) Thread.sleep(400L * (attempt + 1));
+            }
+        }
+        throw last == null ? new IOException("HTTP request failed") : last;
+    }
+
     private CompletableFuture<FreeCoreConfig> loadRemote(String url) {
         if (url == null || url.isBlank() || url.contains("YOUR_")) return CompletableFuture.completedFuture(null);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url + (url.contains("?") ? "&" : "?") + "_fc=" + System.currentTimeMillis()))
@@ -357,9 +380,11 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
             };
             SSLContext ssl = SSLContext.getInstance("TLS");
             ssl.init(null, new javax.net.ssl.TrustManager[]{trust}, new SecureRandom());
-            return HttpClient.newBuilder().sslContext(ssl).followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
+            return HttpClient.newBuilder().sslContext(ssl).version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
         } catch (Exception e) {
-            return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
+            return HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(8)).build();
         }
     }
 
