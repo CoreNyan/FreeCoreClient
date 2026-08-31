@@ -192,8 +192,14 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                 }
                 JsonObject asset = selectJarAsset(release.getAsJsonArray("assets"), bootstrap.clientUpdateAssetPrefix);
                 if (asset == null) throw new IOException("no matching JAR asset in release " + remoteVersion);
-                Path target = installedJarPath();
-                if (target == null) throw new IOException("installed FreeCore JAR path is unavailable");
+                Path installed = installedJarPath();
+                if (installed == null) throw new IOException("installed FreeCore JAR path is unavailable");
+                String assetName = asset.has("name") ? asset.get("name").getAsString() : "";
+                if (assetName.isBlank() || assetName.contains("\\") || assetName.contains("/")
+                        || !assetName.toLowerCase(java.util.Locale.ROOT).endsWith(".jar")) {
+                    throw new IOException("release asset has an invalid JAR filename");
+                }
+                Path target = installed.getParent().resolve(assetName).normalize();
                 String downloadUrl = asset.get("browser_download_url").getAsString();
                 HttpRequest download = HttpRequest.newBuilder(URI.create(downloadUrl))
                         .header("Accept", "application/octet-stream")
@@ -211,7 +217,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                     Files.deleteIfExists(pending);
                     throw new IOException("downloaded file is not a valid FreeCoreClient JAR");
                 }
-                scheduleJarReplacement(target, pending);
+                scheduleJarReplacement(installed, target, pending);
                 clientUpdateNotice = "检测到客户端新版本 " + remoteVersion + "，已下载；退出后自动更新，请重新启动";
                 System.out.println("[FreeCoreClient] " + clientUpdateNotice);
             } catch (Exception error) {
@@ -280,14 +286,15 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
         } catch (Exception ignored) { return false; }
     }
 
-    private static void scheduleJarReplacement(Path target, Path pending) throws IOException {
+    private static void scheduleJarReplacement(Path installed, Path target, Path pending) throws IOException {
         Path script = pending.resolveSibling("freecore-client-update.ps1");
         String ps = "$ErrorActionPreference='SilentlyContinue'\n"
                 + "$gameProcessId=" + ProcessHandle.current().pid() + "\n"
                 + "while (Get-Process -Id $gameProcessId -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
+                + "$installed='" + psQuote(installed.toAbsolutePath().toString()) + "'\n"
                 + "$target='" + psQuote(target.toAbsolutePath().toString()) + "'\n"
                 + "$pending='" + psQuote(pending.toAbsolutePath().toString()) + "'\n"
-                + "for($i=0;$i -lt 30;$i++){ try { Move-Item -LiteralPath $pending -Destination $target -Force; if(Test-Path -LiteralPath $target){ break } } catch {} Start-Sleep -Milliseconds 500 }\n"
+                + "for($i=0;$i -lt 30;$i++){ try { Move-Item -LiteralPath $pending -Destination $target -Force; if(Test-Path -LiteralPath $target){ if($installed -ne $target){ Remove-Item -LiteralPath $installed -Force -ErrorAction SilentlyContinue }; break } } catch {} Start-Sleep -Milliseconds 500 }\n"
                 + "Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force\n";
         Files.writeString(script, ps, StandardCharsets.UTF_8);
         new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script.toString()).start();
