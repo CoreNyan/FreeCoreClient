@@ -1,7 +1,7 @@
-$targetJar = 'E:\FreeCore 26.2\.minecraft\versions\FreeCore\mods\freecore-client-1.0.0.jar'
-if (Test-Path $targetJar) { Move-Item -LiteralPath $targetJar -Destination ($targetJar + '.previous') -Force }
 $versionLine = Get-Content 'gradle.properties' | Where-Object { $_ -match '^mod_version=' } | Select-Object -First 1
 $modVersion = if ($versionLine) { ($versionLine -split '=', 2)[1].Trim() } else { '1.0.0' }
+$targetJar = "E:\FreeCore 26.2\.minecraft\versions\FreeCore\mods\freecore-client-$modVersion.jar"
+if (Test-Path $targetJar) { Move-Item -LiteralPath $targetJar -Destination ($targetJar + '.previous') -Force }
 $metadataDir = Join-Path $env:TEMP ('freecore-runtime-metadata-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $metadataDir | Out-Null
 $metadata = Get-Content 'src/main/resources/fabric.mod.json' -Raw | ConvertFrom-Json

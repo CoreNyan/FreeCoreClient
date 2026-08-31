@@ -2,13 +2,14 @@ package cc.freecore.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.achievement.StatsScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import java.awt.Desktop;
+import java.net.URI;
 
 public final class GuiActions26 {
     private GuiActions26() {}
@@ -38,8 +39,28 @@ public final class GuiActions26 {
                     ConnectScreen.startConnecting(parent, mc, ServerAddress.parseString(data.ip), data, false, null);
                 }
                 case "copy" -> mc.keyboardHandler.setClipboard(button.value == null ? "" : button.value);
-                default -> ConfirmLinkScreen.confirmLinkNow(parent, button.value, true);
+                // URL actions intentionally bypass ConfirmLinkScreen: this client
+                // is a dedicated launcher-style experience and links should open
+                // immediately in the system browser.
+                default -> openUrl(button.value);
             }
         } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    private static void openUrl(String value) {
+        if (value == null || value.isBlank()) return;
+        URI uri = URI.create(value.trim());
+        if (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https")) return;
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(uri);
+            } else {
+                Runtime.getRuntime().exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", uri.toString()});
+            }
+        } catch (Exception ignored) {
+            try {
+                Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start", "", uri.toString()});
+            } catch (Exception fallbackIgnored) { fallbackIgnored.printStackTrace(); }
+        }
     }
 }
