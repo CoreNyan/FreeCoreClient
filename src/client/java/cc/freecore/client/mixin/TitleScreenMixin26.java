@@ -359,13 +359,39 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         if (!freecore$updateDialogShown && updateNotice != null && !updateNotice.isBlank()) {
             freecore$updateDialogShown = true;
             net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-            minecraft.setScreenAndShow(new net.minecraft.client.gui.screens.AlertScreen(
-                    () -> {
+            // A notification is informational, not a confirmation flow. Use a
+            // buttonless overlay so it cannot obscure the menu or imply an
+            // action the user must acknowledge.
+            minecraft.setScreenAndShow(new net.minecraft.client.gui.screens.Screen(
+                    cc.freecore.client.FreeCoreText.component("客户端更新")) {
+                private int freecore$ticks;
+                @Override public void tick() {
+                    if (++freecore$ticks >= 120) {
                         FreeCoreClientRuntime.clearClientUpdateNotice();
                         minecraft.setScreenAndShow(screen);
-                    },
-                    cc.freecore.client.FreeCoreText.component(updateNotice),
-                    cc.freecore.client.FreeCoreText.component("知道了")));
+                    }
+                }
+                @Override public boolean shouldCloseOnEsc() { return true; }
+                @Override public void extractRenderState(GuiGraphicsExtractor overlay, int mouseX, int mouseY, float delta) {
+                    overlay.fill(0, 0, width, height, 0x99000000);
+                    int panelWidth = Math.min(width - 32, 620);
+                    int panelHeight = 92;
+                    int panelX = (width - panelWidth) / 2;
+                    int panelY = (height - panelHeight) / 2;
+                    overlay.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xee121212);
+                    overlay.fill(panelX, panelY, panelX + panelWidth, panelY + 2, 0xfff2f2f2);
+                    overlay.centeredText(cc.freecore.client.FreeCoreText.font(),
+                            cc.freecore.client.FreeCoreText.component("客户端更新"), width / 2, panelY + 18, 0xffffffff);
+                    var lines = cc.freecore.client.FreeCoreText.font().split(
+                            cc.freecore.client.FreeCoreText.component(updateNotice), panelWidth - 28);
+                    int y = panelY + 39;
+                    for (var line : lines) {
+                        if (y >= panelY + panelHeight - 8) break;
+                        overlay.centeredText(cc.freecore.client.FreeCoreText.font(), line, width / 2, y, 0xffdddddd);
+                        y += 11;
+                    }
+                }
+            });
         }
         var announcements = cfg.announcements;
         if (announcements == null || announcements.isEmpty()) return;
