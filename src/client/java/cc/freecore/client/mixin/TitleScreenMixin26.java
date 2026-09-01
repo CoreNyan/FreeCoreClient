@@ -248,8 +248,13 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
                 default -> secondary.add(button);
             }
         }
-        int secondaryRows = secondary.size();
-        int utilityRows = freecore$rows(utility.size(), Math.min(2, Math.max(1, utility.size())));
+        // Use a real grid in compact GUI scales. The old code treated every
+        // secondary card as a full row, then clamped all overflowing cards to
+        // the bottom edge; at GUI scale 4 this made cards overlap visibly.
+        int secondaryColumns = Math.min(3, Math.max(1, screen.width / 130));
+        int secondaryRows = freecore$rows(secondary.size(), secondaryColumns);
+        int utilityColumns = Math.min(2, Math.max(1, utility.size()));
+        int utilityRows = freecore$rows(utility.size(), utilityColumns);
         int available = Math.max(1, screen.height - cursorY - 8);
         int desired = primary.size() * 24 + secondaryRows * 17 + utilityRows * 17
                 + Math.max(0, primary.size() + secondaryRows + utilityRows - 1) * gap;
@@ -264,15 +269,20 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
             freecore$addButton(screen, button, (screen.width - bw) / 2, by, bw, bh, "primary");
             cursorY = by + bh + gap;
         }
-        for (FreeCoreConfig.ButtonConfig button : secondary) {
-            int bw = freecore$compactWidth(button, screen.width, 0.30f, 112);
+        int secondaryGap = Math.max(2, gap);
+        int secondaryWidth = Math.max(72, (screen.width - 24 - (secondaryColumns - 1) * secondaryGap) / secondaryColumns);
+        for (int i = 0; i < secondary.size(); i++) {
+            FreeCoreConfig.ButtonConfig button = secondary.get(i);
+            int col = i % secondaryColumns;
+            int row = i / secondaryColumns;
             int bh = Math.min(freecore$compactHeight(button, screen.height, 0.055f, 14, 22), secondaryHeight);
-            int by = Math.max(12, Math.min(cursorY, screen.height - bh - 8));
-            freecore$addButton(screen, button, (screen.width - bw) / 2, by, bw, bh, "secondary");
-            cursorY = by + bh + gap;
+            int by = cursorY + row * (secondaryHeight + secondaryGap);
+            freecore$addButton(screen, button,
+                    12 + col * (secondaryWidth + secondaryGap), by, secondaryWidth, bh, "secondary");
         }
+        if (secondaryRows > 0) cursorY += secondaryRows * secondaryHeight + Math.max(0, secondaryRows - 1) * secondaryGap + gap;
         if (!utility.isEmpty()) {
-            int columns = Math.min(2, utility.size());
+            int columns = utilityColumns;
             int requested = 0;
             for (FreeCoreConfig.ButtonConfig button : utility) {
                 requested = Math.max(requested, freecore$compactWidth(button, screen.width, 0.22f, 88));
@@ -283,7 +293,7 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
                 int col = i % columns;
                 int row = i / columns;
                 int bh = Math.min(freecore$compactHeight(button, screen.height, 0.05f, 14, 22), utilityHeight);
-                int by = Math.max(12, Math.min(cursorY + row * (bh + gap), screen.height - bh - 8));
+                int by = cursorY + row * (utilityHeight + gap);
                 int gridWidth = columns * utilityWidth + (columns - 1) * gap;
                 freecore$addButton(screen, button, (screen.width - gridWidth) / 2 + col * (utilityWidth + gap), by, utilityWidth, bh, "utility");
             }
