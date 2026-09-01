@@ -255,7 +255,9 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         // Use a real grid in compact GUI scales. The old code treated every
         // secondary card as a full row, then clamped all overflowing cards to
         // the bottom edge; at GUI scale 4 this made cards overlap visibly.
-        int secondaryColumns = Math.min(3, Math.max(1, screen.width / 130));
+        int secondaryColumns = secondary.size() >= 4
+                ? 2
+                : Math.min(3, Math.max(1, screen.width / 130));
         int secondaryRows = freecore$rows(secondary.size(), secondaryColumns);
         int utilityColumns = Math.min(2, Math.max(1, utility.size()));
         int utilityRows = freecore$rows(utility.size(), utilityColumns);
