@@ -103,6 +103,24 @@ public final class FreeCoreConfig {
         return mainMenuButtons != null && !mainMenuButtons.isEmpty() ? mainMenuButtons : buttons;
     }
 
+    /**
+     * Removes null/empty entries Gson may produce when a remote JSON array has
+     * a trailing comma (for example: [{...},]).  Keeping the model normalized
+     * prevents phantom announcement pages and null dereferences in screens.
+     */
+    public void sanitize() {
+        if (announcements == null) announcements = new ArrayList<>();
+        announcements.removeIf(item -> item == null
+                || (isBlank(item.title) && isBlank(item.content) && isBlank(item.date)));
+        if (buttons == null) buttons = new ArrayList<>();
+        if (mainMenuButtons == null) mainMenuButtons = new ArrayList<>();
+        if (pauseButtons == null) pauseButtons = new ArrayList<>();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
     public static final class ButtonConfig {
         public String label;
         public String value;

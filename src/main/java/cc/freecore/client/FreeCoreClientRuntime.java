@@ -62,6 +62,9 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                 })
                 .thenAccept(loaded -> {
                     if (loaded != null) config = loaded;
+                    // Normalize Gson's lenient handling of malformed arrays
+                    // before pagination, persistence, or screen rendering.
+                    config.sanitize();
                     // Keep the visible client config in sync with the exact
                     // JSON that was applied.  This runs on the async loader
                     // chain, never on Minecraft's startup/render thread.
