@@ -3,6 +3,7 @@ package cc.freecore.client.mixin;
 import cc.freecore.client.BackgroundManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,7 +17,11 @@ public abstract class SettingsBackgroundMixin26 {
     private void freecore$settingsBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                                               float delta, CallbackInfo ci) {
         String name = ((Object) this).getClass().getName();
-        boolean customMenu = !name.contains("TitleScreen")
+        // Container/inventory screens keep vanilla's translucent backdrop so
+        // slots and item tooltips retain the expected Minecraft contrast. All
+        // other menus continue using the FreeCore background unchanged.
+        boolean containerMenu = ((Object) this) instanceof AbstractContainerScreen;
+        boolean customMenu = !containerMenu && !name.contains("TitleScreen")
                 && !name.contains("PauseScreen");
         if (customMenu) {
             Screen screen = (Screen) (Object) this;

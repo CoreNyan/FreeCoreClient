@@ -126,7 +126,11 @@ public abstract class TitleScreenMixin26 extends net.minecraft.client.gui.screen
         // Four secondary cards read much better as a balanced 2x2 grid than
         // a 3+1 last row, and this remains responsive on narrow windows.
         if (secondaryButtons.size() == 4) configuredColumns = Math.min(configuredColumns, 2);
-        int secondaryColumns = Math.max(1, Math.min(secondaryButtons.size(), Math.min(configuredColumns, contentWidth >= 270 ? 3 : 2)));
+        // On wide windows a 3+1 row is visually unbalanced and leaves the
+        // last card stranded. Prefer a symmetric two-column action deck;
+        // narrow windows still collapse to one/two columns as space permits.
+        int wideColumns = screen.width >= 640 ? 2 : 3;
+        int secondaryColumns = Math.max(1, Math.min(secondaryButtons.size(), Math.min(configuredColumns, contentWidth >= 270 ? wideColumns : 2)));
         int utilityColumns = Math.max(1, Math.min(2, utilityButtons.size()));
         int primaryRows = freecore$rows(primaryButtons.size(), primaryColumns);
         int secondaryRows = freecore$rows(secondaryButtons.size(), secondaryColumns);
