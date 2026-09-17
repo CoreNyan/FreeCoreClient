@@ -93,6 +93,7 @@
       "label": "设置",
       "value": "",
       "action": "options",
+      "required": true,
       "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
       "background": "#151515",
       "background_hover": "#333333",

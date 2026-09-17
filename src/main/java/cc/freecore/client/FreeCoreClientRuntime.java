@@ -343,16 +343,21 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
 
     private CompletableFuture<FreeCoreConfig> loadRemote(String url) {
         if (url == null || url.isBlank() || url.contains("YOUR_")) return CompletableFuture.completedFuture(null);
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url + (url.contains("?") ? "&" : "?") + "_fc=" + System.currentTimeMillis()))
-                .header("Cache-Control", "no-cache").header("Pragma", "no-cache")
-                .timeout(Duration.ofSeconds(15)).GET().build();
-        return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-                .thenApply(response -> {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(url + (url.contains("?") ? "&" : "?") + "_fc=" + System.currentTimeMillis()))
+                        .header("Cache-Control", "no-cache").header("Pragma", "no-cache")
+                        .timeout(Duration.ofSeconds(20)).GET().build();
+                HttpResponse<String> response = sendWithRetry(request,
+                        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
                     if (response.statusCode() / 100 != 2) throw new IllegalStateException("HTTP " + response.statusCode());
                     FreeCoreConfig parsed = GSON.fromJson(response.body(), FreeCoreConfig.class);
                     if (parsed == null) throw new IllegalStateException("empty JSON");
                     return parsed;
-                });
+            } catch (Exception error) {
+                throw new java.util.concurrent.CompletionException(error);
+            }
+        });
     }
 
     private FreeCoreConfig loadLocalConfig() {
@@ -360,9 +365,42 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
             Path game = FabricLoader.getInstance().getGameDir();
             Path path = game.resolve("config/freecore_config.json");
             if (!Files.isRegularFile(path)) path = game.resolve("freecore_config.json");
-            if (Files.isRegularFile(path)) return GSON.fromJson(Files.readString(path), FreeCoreConfig.class);
+            FreeCoreConfig local = Files.isRegularFile(path)
+                    ? GSON.fromJson(Files.readString(path), FreeCoreConfig.class) : null;
+            FreeCoreConfig bundled = loadBundledConfig();
+            if (local == null) return bundled;
+            if (bundled != null) {
+                if (local.pauseButtons == null) local.pauseButtons = new java.util.ArrayList<>();
+                mergeMissingButtons(local.pauseButtons, bundled.pauseButtons);
+            }
+            return local;
         } catch (Exception e) { System.err.println("[FreeCoreClient] local config read failed: " + e); }
-        return null;
+        return loadBundledConfig();
+    }
+
+    private static FreeCoreConfig loadBundledConfig() {
+        try (var input = FreeCoreClientRuntime.class.getResourceAsStream("/freecore_config.json")) {
+            if (input == null) return FreeCoreConfig.defaults();
+            try (var reader = new java.io.InputStreamReader(input, StandardCharsets.UTF_8)) {
+                FreeCoreConfig bundled = GSON.fromJson(reader, FreeCoreConfig.class);
+                return bundled == null ? FreeCoreConfig.defaults() : bundled;
+            }
+        } catch (Exception error) {
+            System.err.println("[FreeCoreClient] bundled config read failed: " + error);
+            return FreeCoreConfig.defaults();
+        }
+    }
+
+    private static void mergeMissingButtons(java.util.List<FreeCoreConfig.ButtonConfig> target,
+                                            java.util.List<FreeCoreConfig.ButtonConfig> fallback) {
+        if (target == null || fallback == null) return;
+        for (FreeCoreConfig.ButtonConfig candidate : fallback) {
+            if (candidate != null && Boolean.TRUE.equals(candidate.required)
+                    && findMatchingButton(target, candidate) == null) {
+                target.add(candidate);
+                System.out.println("[FreeCoreClient] Restored required cached button: " + candidate.label);
+            }
+        }
     }
 
     private void saveLocalConfig(FreeCoreConfig value) {

@@ -126,6 +126,8 @@ public final class FreeCoreConfig {
         public String label;
         public String value;
         public String action;
+        /** Re-added from the bundled JSON when an older local cache lacks this core action. */
+        public Boolean required;
         @SerializedName("featured") public Boolean featured;
         /** primary = server CTA, secondary = links, utility = settings/quit. */
         public String style;
