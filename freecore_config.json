@@ -90,6 +90,19 @@
       "icon_offset_x": 1
     },
     {
+      "label": "设置",
+      "value": "",
+      "action": "options",
+      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
+      "background": "#151515",
+      "background_hover": "#333333",
+      "border": "#606060",
+      "border_hover": "#FFFFFF",
+      "corner_cut": 6,
+      "icon_size": 20,
+      "text_offset_x": 2
+    },
+    {
       "label": "个人中心",
       "value": "https://account.freecore.cc",
       "action": "url",

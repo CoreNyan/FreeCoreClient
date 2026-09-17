@@ -7,42 +7,15 @@ import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 
 public final class IconLoader {
-    private static final HttpClient HTTP = imageHttpClient();
-    private static HttpClient imageHttpClient() {
-        try {
-            X509TrustManager trust = new X509TrustManager() { public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];} public void checkClientTrusted(X509Certificate[] c,String a){} public void checkServerTrusted(X509Certificate[] c,String a){} };
-            SSLContext ssl = SSLContext.getInstance("TLS"); ssl.init(null, new javax.net.ssl.TrustManager[]{trust}, new SecureRandom());
-            return HttpClient.newBuilder().sslContext(ssl).connectTimeout(Duration.ofSeconds(8)).build();
-        } catch (Exception e) { return HttpClient.newHttpClient(); }
-    }
     private IconLoader() {}
     public static void loadAsync(String url, Minecraft minecraft) {
         if (url == null || url.isBlank() || url.startsWith("YOUR_")) return;
         System.out.println("[FreeCoreClient] Loading application icon: " + url);
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                HttpRequest req = HttpRequest.newBuilder(URI.create(url + (url.contains("?") ? "&" : "?") + "_fc=" + System.currentTimeMillis()))
-                        .header("Cache-Control", "no-cache").header("Pragma", "no-cache")
-                        .timeout(Duration.ofSeconds(15)).GET().build();
-                HttpResponse<byte[]> r = HTTP.send(req, HttpResponse.BodyHandlers.ofByteArray());
-                if (r.statusCode() / 100 != 2) { System.err.println("[FreeCoreClient] Icon HTTP " + r.statusCode()); return null; }
-                System.out.println("[FreeCoreClient] Icon downloaded: " + r.body().length + " bytes");
-                return r.body();
-            } catch (Exception e) { e.printStackTrace(); return null; }
-        }).thenAcceptAsync(bytes -> apply(bytes, minecraft), minecraft)
+        RemoteIconCache.loadAsync(url, minecraft)
+                .thenAcceptAsync(bytes -> apply(bytes, minecraft), minecraft)
                 .exceptionally(error -> { System.err.println("[FreeCoreClient] Icon install task failed: " + error); return null; });
     }
     private static void apply(byte[] bytes, Minecraft minecraft) {

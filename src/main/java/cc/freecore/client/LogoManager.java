@@ -7,48 +7,16 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import java.io.ByteArrayInputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 
 public final class LogoManager {
-    private static final HttpClient HTTP = imageHttpClient();
     private static volatile Identifier id;
     private static volatile int width, height;
     private LogoManager() {}
     public static void loadAsync(String url, Minecraft minecraft) {
         if (url == null || url.isBlank() || url.startsWith("YOUR_")) return;
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                HttpRequest req = HttpRequest.newBuilder(URI.create(url + (url.contains("?") ? "&" : "?") + "_fc=" + System.currentTimeMillis()))
-                        .header("Cache-Control", "no-cache").header("Pragma", "no-cache")
-                        .timeout(Duration.ofSeconds(15)).GET().build();
-                HttpResponse<byte[]> r = HTTP.send(req, HttpResponse.BodyHandlers.ofByteArray());
-                if (r.statusCode() / 100 != 2) { System.err.println("[FreeCoreClient] Logo HTTP " + r.statusCode()); return null; }
-                System.out.println("[FreeCoreClient] Logo downloaded: " + r.body().length + " bytes");
-                return r.body();
-            } catch (Exception e) { e.printStackTrace(); return null; }
-        }).thenAcceptAsync(bytes -> install(bytes, minecraft), minecraft);
-    }
-
-    private static HttpClient imageHttpClient() {
-        try {
-            X509TrustManager trust = new X509TrustManager() {
-                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-                public void checkClientTrusted(X509Certificate[] c, String a) {}
-                public void checkServerTrusted(X509Certificate[] c, String a) {}
-            };
-            SSLContext ssl = SSLContext.getInstance("TLS");
-            ssl.init(null, new javax.net.ssl.TrustManager[]{trust}, new SecureRandom());
-            return HttpClient.newBuilder().sslContext(ssl).connectTimeout(Duration.ofSeconds(8)).build();
-        } catch (Exception e) { return HttpClient.newHttpClient(); }
+        RemoteIconCache.loadAsync(url, minecraft)
+                .thenAcceptAsync(bytes -> install(bytes, minecraft), minecraft)
+                .exceptionally(error -> { System.err.println("[FreeCoreClient] Logo install task failed: " + error); return null; });
     }
     private static void install(byte[] bytes, Minecraft minecraft) {
         if (bytes == null) return;

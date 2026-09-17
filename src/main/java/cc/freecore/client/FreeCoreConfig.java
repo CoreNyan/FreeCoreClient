@@ -92,6 +92,7 @@ public final class FreeCoreConfig {
         config.mainMenuButtons.add(new ButtonConfig("退出游戏", "", "quit"));
         config.pauseButtons.add(new ButtonConfig("继续游戏", "", "resume"));
         config.pauseButtons.add(new ButtonConfig("统计信息", "", "stats"));
+        config.pauseButtons.add(new ButtonConfig("设置", "", "options"));
         config.pauseButtons.add(new ButtonConfig("官网", "https://freecore.cc", "url"));
         config.pauseButtons.add(new ButtonConfig("个人中心", "https://account.freecore.cc", "url"));
         config.pauseButtons.add(new ButtonConfig("QQ交流群", "1085070135", "copy"));

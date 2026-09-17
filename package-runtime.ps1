@@ -1,6 +1,13 @@
 $versionLine = Get-Content 'gradle.properties' | Where-Object { $_ -match '^mod_version=' } | Select-Object -First 1
 $modVersion = if ($versionLine) { ($versionLine -split '=', 2)[1].Trim() } else { '1.0.0' }
-$targetJar = "E:\FreeCore 26.2\.minecraft\versions\FreeCore\mods\freecore-client-$modVersion.jar"
+$minecraftCandidates = @('E:\FreeCore\.minecraft', 'E:\FreeCore 26.2\.minecraft', 'E:\Sample\FreeCore - 副本\.minecraft')
+$minecraftDir = $minecraftCandidates | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'versions\FreeCore\FreeCore.jar') } | Select-Object -First 1
+if (-not $minecraftDir) { throw 'A FreeCore Minecraft installation was not found.' }
+$modsDir = Join-Path $minecraftDir 'versions\FreeCore\mods'
+$targetJar = Join-Path $modsDir "freecore-client-$modVersion.jar"
+Get-ChildItem -LiteralPath $modsDir -Filter 'freecore-client-*.jar' | Where-Object { $_.FullName -ne $targetJar } | ForEach-Object {
+    Move-Item -LiteralPath $_.FullName -Destination ($_.FullName + '.previous') -Force
+}
 if (Test-Path $targetJar) { Move-Item -LiteralPath $targetJar -Destination ($targetJar + '.previous') -Force }
 $metadataDir = Join-Path $env:TEMP ('freecore-runtime-metadata-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $metadataDir | Out-Null

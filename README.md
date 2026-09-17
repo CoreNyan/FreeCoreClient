@@ -7,6 +7,7 @@ FreeCore Client 是一个基于 Fabric 的 Minecraft 客户端 Mod，面向 Mine
 - 主菜单和暂停菜单自定义布局、按钮、图标与公告栏。
 - 公告支持日期、历史记录、轮播或手动翻页、滚轮滚动和滚动条。
 - 背景、LOGO、窗口标题和应用图标支持 URL 或本地路径。
+- URL 图标缓存在 `config/freecoreclient/icon-cache/`，启动时通过 ETag、Last-Modified 和 SHA-256 异步校验，仅在远端内容变化时替换缓存。
 - 所有网络请求在后台线程执行，不阻塞 Minecraft 启动线程。
 - URL 按钮使用 Minecraft 原生确认页面后打开浏览器。
 - 设置、资源包、加载页面等菜单可复用 FreeCore 的视觉背景。

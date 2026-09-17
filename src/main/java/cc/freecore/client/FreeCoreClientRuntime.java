@@ -83,6 +83,8 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                     if (config.backgroundUrl != null) BackgroundManager.loadAsync(config.backgroundUrl, net.minecraft.client.Minecraft.getInstance());
                     if (config.iconUrl != null) IconLoader.loadAsync(config.iconUrl, net.minecraft.client.Minecraft.getInstance());
                     if (config.logoUrl != null) LogoManager.loadAsync(config.logoUrl, net.minecraft.client.Minecraft.getInstance());
+                    preloadButtonIcons(config.getMainMenuButtons());
+                    preloadButtonIcons(config.pauseButtons);
                     System.out.println("[FreeCoreClient] JSON configuration loaded: main_menu_buttons=" + config.getMainMenuButtons().size()
                             + ", pause_buttons=" + config.pauseButtons.size()
                             + ", icon_url=" + config.iconUrl
@@ -90,6 +92,16 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
                             + ", background_url=" + config.backgroundUrl);
                 })
                 .exceptionally(error -> { error.printStackTrace(); return null; });
+    }
+
+    private static void preloadButtonIcons(java.util.List<FreeCoreConfig.ButtonConfig> buttons) {
+        if (buttons == null) return;
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        for (FreeCoreConfig.ButtonConfig button : buttons) {
+            if (button != null && button.iconUrl != null && !button.iconUrl.isBlank()) {
+                ButtonIconManager.loadAsync(button.iconUrl, minecraft);
+            }
+        }
     }
 
     private static void mergeLocalIconHints(FreeCoreConfig remote) {
