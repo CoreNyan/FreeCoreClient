@@ -14,9 +14,14 @@ public final class IconLoader {
     public static void loadAsync(String url, Minecraft minecraft) {
         if (url == null || url.isBlank() || url.startsWith("YOUR_")) return;
         System.out.println("[FreeCoreClient] Loading application icon: " + url);
-        RemoteIconCache.loadAsync(url, minecraft)
+        // Install the last known-good bytes first. The network refresh is a
+        // separate background operation and can never delay the first frame.
+        RemoteIconCache.loadCachedAsync(url, minecraft)
                 .thenAcceptAsync(bytes -> apply(bytes, minecraft), minecraft)
                 .exceptionally(error -> { System.err.println("[FreeCoreClient] Icon install task failed: " + error); return null; });
+        RemoteIconCache.refreshAsync(url, minecraft)
+                .thenAcceptAsync(bytes -> apply(bytes, minecraft), minecraft)
+                .exceptionally(error -> { System.err.println("[FreeCoreClient] Icon refresh failed: " + error); return null; });
     }
     private static void apply(byte[] bytes, Minecraft minecraft) {
         if (bytes == null) return;

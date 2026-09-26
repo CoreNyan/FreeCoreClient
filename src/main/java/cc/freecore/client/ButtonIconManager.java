@@ -29,10 +29,13 @@ public final class ButtonIconManager {
     public static void loadAsync(String source, Minecraft minecraft) {
         if (source == null || source.isBlank() || source.startsWith("YOUR_")
                 || IDS.containsKey(source) || !IN_FLIGHT.add(source)) return;
-        RemoteIconCache.loadAsync(source, minecraft)
+        RemoteIconCache.loadCachedAsync(source, minecraft)
+                .thenAcceptAsync(bytes -> install(source, bytes, minecraft), minecraft)
+                .exceptionally(error -> { System.err.println("[FreeCoreClient] Button icon failed: " + source + " -> " + error); return null; });
+        RemoteIconCache.refreshAsync(source, minecraft)
                 .thenAcceptAsync(bytes -> install(source, bytes, minecraft), minecraft)
                 .whenComplete((ignored, error) -> IN_FLIGHT.remove(source))
-                .exceptionally(error -> { System.err.println("[FreeCoreClient] Button icon failed: " + source + " -> " + error); return null; });
+                .exceptionally(error -> { System.err.println("[FreeCoreClient] Button icon refresh failed: " + source + " -> " + error); return null; });
     }
 
     private static void install(String source, byte[] bytes, Minecraft minecraft) {

@@ -33,26 +33,64 @@ public final class RemoteIconCache {
     private RemoteIconCache() {}
 
     public static CompletableFuture<byte[]> loadAsync(String source, Minecraft minecraft) {
-        return loadAsync(source, minecraft.gameDirectory.toPath());
+        return loadCachedAsync(source, minecraft)
+                .thenCompose(cached -> refreshAsync(source, minecraft)
+                        .handle((fresh, error) -> fresh != null ? fresh : cached));
     }
 
-    static CompletableFuture<byte[]> loadAsync(String source, Path gameDirectory) {
+    /**
+     * Reads the last successfully written asset without touching the network.
+     * Callers use this future for the first render of a screen.
+     */
+    public static CompletableFuture<byte[]> loadCachedAsync(String source, Minecraft minecraft) {
+        return loadCachedAsync(source, minecraft.gameDirectory.toPath());
+    }
+
+    static CompletableFuture<byte[]> loadCachedAsync(String source, Path gameDirectory) {
+        if (source == null || source.isBlank() || source.startsWith("YOUR_")) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return CompletableFuture.supplyAsync(() -> readCached(source, gameDirectory));
+    }
+
+    /** Starts a conditional remote refresh after the cached bytes have been made available. */
+    public static CompletableFuture<byte[]> refreshAsync(String source, Minecraft minecraft) {
+        return refreshAsync(source, minecraft.gameDirectory.toPath());
+    }
+
+    static CompletableFuture<byte[]> refreshAsync(String source, Path gameDirectory) {
         if (source == null || source.isBlank() || source.startsWith("YOUR_")) {
             return CompletableFuture.completedFuture(null);
         }
         if (!isRemote(source)) {
-            return CompletableFuture.supplyAsync(() -> readLocal(source, gameDirectory));
+            return CompletableFuture.completedFuture(null);
         }
         return REQUESTS.computeIfAbsent(source, key -> CompletableFuture
                 .supplyAsync(() -> fetchRemote(key, gameDirectory))
                 .whenComplete((ignored, error) -> REQUESTS.remove(key)));
     }
 
+    private static byte[] readCached(String source, Path gameDirectory) {
+        if (!isRemote(source)) return readLocal(source, gameDirectory);
+        Path dataPath = cacheDataPath(source, gameDirectory);
+        try {
+            if (Files.isRegularFile(dataPath)) {
+                byte[] bytes = Files.readAllBytes(dataPath);
+                if (bytes.length > 0) {
+                    System.out.println("[FreeCoreClient] Using cached asset: " + source);
+                    return bytes;
+                }
+            }
+        } catch (IOException error) {
+            System.err.println("[FreeCoreClient] Cached asset read failed: " + source + " -> " + error);
+        }
+        return null;
+    }
+
     private static byte[] fetchRemote(String source, Path gameDirectory) {
-        Path directory = gameDirectory.resolve("config/freecoreclient/icon-cache");
-        String key = sha256(source.getBytes(StandardCharsets.UTF_8));
-        Path dataPath = directory.resolve(key + ".img");
-        Path metadataPath = directory.resolve(key + ".json");
+        Path dataPath = cacheDataPath(source, gameDirectory);
+        Path metadataPath = cacheMetadataPath(source, gameDirectory);
+        Path directory = dataPath.getParent();
         try {
             Files.createDirectories(directory);
             byte[] cached = Files.isRegularFile(dataPath) ? Files.readAllBytes(dataPath) : null;
@@ -121,6 +159,16 @@ public final class RemoteIconCache {
         } catch (Exception error) {
             throw new IllegalStateException("Unable to load local icon " + source, error);
         }
+    }
+
+    private static Path cacheDataPath(String source, Path gameDirectory) {
+        String key = sha256(source.getBytes(StandardCharsets.UTF_8));
+        return gameDirectory.resolve("config/freecoreclient/icon-cache").resolve(key + ".img");
+    }
+
+    private static Path cacheMetadataPath(String source, Path gameDirectory) {
+        String key = sha256(source.getBytes(StandardCharsets.UTF_8));
+        return gameDirectory.resolve("config/freecoreclient/icon-cache").resolve(key + ".json");
     }
 
     private static void updateMetadata(Metadata metadata, HttpResponse<?> response, String hash) {

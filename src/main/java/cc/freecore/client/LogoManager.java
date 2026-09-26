@@ -14,9 +14,12 @@ public final class LogoManager {
     private LogoManager() {}
     public static void loadAsync(String url, Minecraft minecraft) {
         if (url == null || url.isBlank() || url.startsWith("YOUR_")) return;
-        RemoteIconCache.loadAsync(url, minecraft)
+        RemoteIconCache.loadCachedAsync(url, minecraft)
                 .thenAcceptAsync(bytes -> install(bytes, minecraft), minecraft)
                 .exceptionally(error -> { System.err.println("[FreeCoreClient] Logo install task failed: " + error); return null; });
+        RemoteIconCache.refreshAsync(url, minecraft)
+                .thenAcceptAsync(bytes -> install(bytes, minecraft), minecraft)
+                .exceptionally(error -> { System.err.println("[FreeCoreClient] Logo refresh failed: " + error); return null; });
     }
     private static void install(byte[] bytes, Minecraft minecraft) {
         if (bytes == null) return;

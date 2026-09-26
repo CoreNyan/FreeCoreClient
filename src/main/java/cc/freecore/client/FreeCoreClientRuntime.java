@@ -22,6 +22,7 @@ import com.google.gson.JsonParser;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import java.security.SecureRandom;
@@ -36,6 +37,7 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
     private static final HttpClient HTTP = imageHttpClient();
     private static volatile FreeCoreConfig config = FreeCoreConfig.defaults();
     private static volatile String clientUpdateNotice = "";
+    private static final AtomicBoolean TITLE_REFRESH_SCHEDULED = new AtomicBoolean();
 
     public static FreeCoreConfig getConfig() { return config; }
     public static String getClientUpdateNotice() { return clientUpdateNotice; }
@@ -47,51 +49,63 @@ public final class FreeCoreClientRuntime implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        CompletableFuture.supplyAsync(this::loadBootstrap)
-                .thenCompose(bootstrap -> {
-                    String url = bootstrap == null ? null : bootstrap.remoteConfigUrl;
-                    System.out.println("[FreeCoreClient] bootstrap remote_config_url=" + url);
-                    checkForClientUpdate(bootstrap);
-                    if (url == null || url.isBlank() || url.contains("YOUR_")) {
-                        return CompletableFuture.completedFuture(loadLocalConfig());
-                    }
-                    return loadRemote(url).exceptionally(error -> {
-                        System.err.println("[FreeCoreClient] remote config load failed: " + error);
-                        return loadLocalConfig();
-                    });
-                })
-                .thenAccept(loaded -> {
-                    if (loaded != null) config = loaded;
-                    // Normalize Gson's lenient handling of malformed arrays
-                    // before pagination, persistence, or screen rendering.
-                    config.sanitize();
-                    // Keep the visible client config in sync with the exact
-                    // JSON that was applied.  This runs on the async loader
-                    // chain, never on Minecraft's startup/render thread.
-                    saveLocalConfig(config);
-                    // Keep per-button artwork usable while a remote repository is
-                    // being rolled out: local JSON icon hints fill only missing
-                    // fields and never overwrite remote labels/actions/layout.
-                    mergeLocalIconHints(config);
-                    if (config.buttons == null) config.buttons = new java.util.ArrayList<>();
-                    if (config.mainMenuButtons == null) config.mainMenuButtons = new java.util.ArrayList<>();
-                    if (config.pauseButtons == null || config.pauseButtons.isEmpty()) config.pauseButtons = FreeCoreConfig.defaults().pauseButtons;
-                    if (config.announcements == null) config.announcements = new java.util.ArrayList<>();
-                    if (config.windowTitle != null) applyWindowTitleWhenReady(config.windowTitle);
-                    if (config.windowTitle != null) Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "freecore-title"); t.setDaemon(true); return t; })
-                            .scheduleAtFixedRate(() -> applyWindowTitleWhenReady(config.windowTitle), 2, 5, TimeUnit.SECONDS);
-                    if (config.backgroundUrl != null) BackgroundManager.loadAsync(config.backgroundUrl, net.minecraft.client.Minecraft.getInstance());
-                    if (config.iconUrl != null) IconLoader.loadAsync(config.iconUrl, net.minecraft.client.Minecraft.getInstance());
-                    if (config.logoUrl != null) LogoManager.loadAsync(config.logoUrl, net.minecraft.client.Minecraft.getInstance());
-                    preloadButtonIcons(config.getMainMenuButtons());
-                    preloadButtonIcons(config.pauseButtons);
-                    System.out.println("[FreeCoreClient] JSON configuration loaded: main_menu_buttons=" + config.getMainMenuButtons().size()
-                            + ", pause_buttons=" + config.pauseButtons.size()
-                            + ", icon_url=" + config.iconUrl
-                            + ", logo_url=" + config.logoUrl
-                            + ", background_url=" + config.backgroundUrl);
-                })
-                .exceptionally(error -> { error.printStackTrace(); return null; });
+        // The cached snapshot is deliberately started first and applied as soon
+        // as it is decoded.  Remote I/O is a second stage and can replace it
+        // later, but it can never blank or delay the first screen.
+        CompletableFuture<FreeCoreConfig> localFuture = CompletableFuture.supplyAsync(this::loadLocalConfig);
+        CompletableFuture<BootstrapConfig> bootstrapFuture = CompletableFuture.supplyAsync(this::loadBootstrap);
+        bootstrapFuture.thenAccept(bootstrap -> {
+            String url = bootstrap == null ? null : bootstrap.remoteConfigUrl;
+            System.out.println("[FreeCoreClient] bootstrap remote_config_url=" + url);
+            checkForClientUpdate(bootstrap);
+        });
+        localFuture.thenAccept(local -> {
+            applyLoadedConfig(local, "cached");
+            bootstrapFuture.thenCompose(bootstrap -> {
+                String url = bootstrap == null ? null : bootstrap.remoteConfigUrl;
+                if (url == null || url.isBlank() || url.contains("YOUR_")) {
+                    return CompletableFuture.completedFuture(null);
+                }
+                return loadRemote(url);
+            }).thenAccept(remote -> {
+                if (remote != null) applyLoadedConfig(remote, "remote");
+            }).exceptionally(error -> {
+                System.err.println("[FreeCoreClient] remote config refresh failed; cached config remains active: " + error);
+                return null;
+            });
+        }).exceptionally(error -> {
+            System.err.println("[FreeCoreClient] cached config stage failed: " + error);
+            return null;
+        });
+    }
+
+    private void applyLoadedConfig(FreeCoreConfig loaded, String source) {
+        if (loaded != null) config = loaded;
+        config.sanitize();
+        // Persist only a successfully decoded snapshot. A failed remote request
+        // therefore cannot overwrite the last known-good cache.
+        saveLocalConfig(config);
+        mergeLocalIconHints(config);
+        if (config.buttons == null) config.buttons = new java.util.ArrayList<>();
+        if (config.mainMenuButtons == null) config.mainMenuButtons = new java.util.ArrayList<>();
+        if (config.pauseButtons == null || config.pauseButtons.isEmpty()) config.pauseButtons = FreeCoreConfig.defaults().pauseButtons;
+        if (config.announcements == null) config.announcements = new java.util.ArrayList<>();
+        if (config.windowTitle != null) applyWindowTitleWhenReady(config.windowTitle);
+        if (config.windowTitle != null && TITLE_REFRESH_SCHEDULED.compareAndSet(false, true)) {
+            Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "freecore-title"); t.setDaemon(true); return t; })
+                    .scheduleAtFixedRate(() -> applyWindowTitleWhenReady(config.windowTitle), 2, 5, TimeUnit.SECONDS);
+        }
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        if (config.backgroundUrl != null) BackgroundManager.loadAsync(config.backgroundUrl, minecraft);
+        if (config.iconUrl != null) IconLoader.loadAsync(config.iconUrl, minecraft);
+        if (config.logoUrl != null) LogoManager.loadAsync(config.logoUrl, minecraft);
+        preloadButtonIcons(config.getMainMenuButtons());
+        preloadButtonIcons(config.pauseButtons);
+        System.out.println("[FreeCoreClient] " + source + " JSON applied: main_menu_buttons=" + config.getMainMenuButtons().size()
+                + ", pause_buttons=" + config.pauseButtons.size()
+                + ", icon_url=" + config.iconUrl
+                + ", logo_url=" + config.logoUrl
+                + ", background_url=" + config.backgroundUrl);
     }
 
     private static void preloadButtonIcons(java.util.List<FreeCoreConfig.ButtonConfig> buttons) {
