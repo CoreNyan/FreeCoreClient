@@ -148,8 +148,8 @@
   ],
   "main_menu_buttons": [
     {
-      "label": "加入服务器",
-      "value": "mc.freecore.cc",
+      "label": "加入游戏（主线路）",
+      "value": "mc.lynnhma.xyz",
       "action": "server",
       "style": "primary",
       "subtitle": "mc.freecore.cc",
@@ -162,9 +162,29 @@
       "icon_size": 24,
       "text_offset_x": 4,
       "animation_speed": 1.15,
-      "x_percent": 0.5,
+      "x_percent": 0.35,
       "y_percent": 0.45,
-      "width_percent": 0.58,
+      "width_percent": 0.28,
+      "height_percent": 0.085
+    },
+    {
+      "label": "加入游戏（移动线路）",
+      "value": "yd.lynnhma.xyz",
+      "action": "server",
+      "style": "primary",
+      "subtitle": "yd.lynnhma.xyz",
+      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "background": "#090909",
+      "background_hover": "#202020",
+      "border": "#E0E0E0",
+      "border_hover": "#FFFFFF",
+      "corner_cut": 8,
+      "icon_size": 24,
+      "text_offset_x": 4,
+      "animation_speed": 1.15,
+      "x_percent": 0.65,
+      "y_percent": 0.45,
+      "width_percent": 0.28,
       "height_percent": 0.085
     },
     {
