@@ -1,7 +1,7 @@
 {
   "window_title": "FreeCore - 自由核心",
-  "icon_url": "https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/icon.png",
-  "logo_url": "https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/logo.png",
+  "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/icon.png",
+  "logo_url": "https://ghproxy.net/https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/logo.png",
   "theme_color": "black_and_white",
   "loading_screen_enabled": true,
   "loading_screen_color": -16777216,
@@ -38,13 +38,8 @@
   "announcements": [
     {
       "title": "FreeCore 公告",
-      "content": "欢迎使用 FreeCore 客户端",
-      "date": "2026-08-31"
-    },
-    {
-      "title": "测试公告",
-      "content": "这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容这是一条测试公告，有很多内容2333",
-      "date": "2026-08-31"
+      "content": "欢迎使用 FreeCore 客户端，将来会在这里发布公告。",
+      "date": "2026-09-01"
     }
   ],
   "pause_buttons": [
@@ -52,7 +47,7 @@
       "label": "继续游戏",
       "value": "",
       "action": "resume",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
       "background": "#181818",
       "background_hover": "#303030",
       "border": "#707070",
@@ -66,7 +61,7 @@
       "label": "统计信息",
       "value": "",
       "action": "stats",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/analytics/materialiconsoutlined/48dp/1x/outline_analytics_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/analytics/materialiconsoutlined/48dp/1x/outline_analytics_black_48dp.png",
       "background": "#111111",
       "background_hover": "#292929",
       "border": "#555555",
@@ -78,9 +73,9 @@
     },
     {
       "label": "官网",
-      "value": "https://freecore.cc",
+      "value": "https://lynnhma.xyz",
       "action": "url",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/language/materialiconsoutlined/48dp/1x/outline_language_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/language/materialiconsoutlined/48dp/1x/outline_language_black_48dp.png",
       "background": "#151515",
       "background_hover": "#333333",
       "border": "#606060",
@@ -90,11 +85,12 @@
       "icon_offset_x": 1
     },
     {
-      "label": "设置",
-      "value": "",
-      "action": "options",
+     "label": "设置",
+     "value": "",
+     "action": "options",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
       "required": true,
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
       "background": "#151515",
       "background_hover": "#333333",
       "border": "#606060",
@@ -104,10 +100,11 @@
       "text_offset_x": 2
     },
     {
-      "label": "个人中心",
-      "value": "https://account.freecore.cc",
-      "action": "url",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_box/materialiconsoutlined/48dp/1x/outline_account_box_black_48dp.png",
+     "label": "个人中心",
+     "value": "https://account.lynnhma.xyz",
+     "action": "url",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_box/materialiconsoutlined/48dp/1x/outline_account_box_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_box/materialiconsoutlined/48dp/1x/outline_account_box_black_48dp.png",
       "background": "#202020",
       "background_hover": "#3A3A3A",
       "border": "#858585",
@@ -119,9 +116,9 @@
     },
     {
       "label": "QQ交流群",
-      "value": "1085070135",
-      "action": "copy",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/communication/chat/materialiconsoutlined/48dp/1x/outline_chat_black_48dp.png",
+      "value": "https://qm.qq.com/q/fwCibn5mjC",
+      "action": "url",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/communication/chat/materialiconsoutlined/48dp/1x/outline_chat_black_48dp.png",
       "background": "#121212",
       "background_hover": "#2B2B2B",
       "border": "#4F4F4F",
@@ -134,7 +131,7 @@
       "label": "断开连接",
       "value": "",
       "action": "disconnect",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/power_settings_new/materialiconsoutlined/48dp/1x/outline_power_settings_new_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/power_settings_new/materialiconsoutlined/48dp/1x/outline_power_settings_new_black_48dp.png",
       "background": "#190E0E",
       "background_hover": "#3A1717",
       "border": "#704040",
@@ -148,12 +145,12 @@
   ],
   "main_menu_buttons": [
     {
-      "label": "加入游戏（主线路）",
-      "value": "mc.lynnhma.xyz",
-      "action": "server",
+     "label": "加入游戏（主线路）",
+     "value": "mc.lynnhma.xyz",
+     "action": "server",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
       "style": "primary",
-      "subtitle": "mc.freecore.cc",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "subtitle": "FreeCore",
       "background": "#090909",
       "background_hover": "#202020",
       "border": "#E0E0E0",
@@ -173,7 +170,7 @@
       "action": "server",
       "style": "primary",
       "subtitle": "yd.lynnhma.xyz",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
       "background": "#090909",
       "background_hover": "#202020",
       "border": "#E0E0E0",
@@ -233,7 +230,7 @@
       "action": "singleplayer",
       "style": "secondary",
       "subtitle": "进入本地世界",
-      "icon_url": "https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/computer_white.png",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/CoreNyan/freecore-client-config-json/main/computer_white.png",
       "background": "#151515",
       "background_hover": "#282828",
       "border": "#686868",
@@ -248,12 +245,12 @@
       "height_percent": 0.055
     },
     {
-      "label": "官网",
-      "value": "https://freecore.cc",
-      "action": "url",
+     "label": "官网",
+     "value": "https://account.lynnhma.xyz",
+     "action": "url",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/language/materialiconsoutlined/48dp/1x/outline_language_black_48dp.png",
       "style": "secondary",
-      "subtitle": "访问官方世界",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/language/materialiconsoutlined/48dp/1x/outline_language_black_48dp.png",
+      "subtitle": "访问官方网站",
       "background": "#151515",
       "background_hover": "#282828",
       "border": "#686868",
@@ -268,11 +265,11 @@
     },
     {
       "label": "个人中心",
-      "value": "https://account.freecore.cc",
+      "value": "https://account.lynnhma.xyz",
       "action": "url",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_box/materialiconsoutlined/48dp/1x/outline_account_box_black_48dp.png",
       "style": "secondary",
       "subtitle": "管理玩家账户",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_box/materialiconsoutlined/48dp/1x/outline_account_box_black_48dp.png",
       "background": "#151515",
       "background_hover": "#282828",
       "border": "#686868",
@@ -287,12 +284,12 @@
       "height_percent": 0.055
     },
     {
-      "label": "官方QQ群",
-      "value": "1085070135",
-      "action": "copy",
+     "label": "官方QQ群",
+     "value": "https://qm.qq.com/q/fwCibn5mjC",
+     "action": "url",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/communication/chat/materialiconsoutlined/48dp/1x/outline_chat_black_48dp.png",
       "style": "secondary",
       "subtitle": "1085070135",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/communication/chat/materialiconsoutlined/48dp/1x/outline_chat_black_48dp.png",
       "background": "#151515",
       "background_hover": "#282828",
       "border": "#686868",
@@ -309,8 +306,8 @@
       "label": "设置",
       "value": "",
       "action": "options",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
       "style": "utility",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/settings/materialiconsoutlined/48dp/1x/outline_settings_black_48dp.png",
       "background": "#151515",
       "background_hover": "#282828",
       "border": "#686868",
@@ -324,11 +321,11 @@
       "height_percent": 0.05
     },
     {
-      "label": "退出游戏",
-      "value": "",
-      "action": "quit",
+     "label": "退出游戏",
+     "value": "",
+     "action": "quit",
+      "icon_url": "https://ghproxy.net/https://raw.githubusercontent.com/google/material-design-icons/master/png/action/power_settings_new/materialiconsoutlined/48dp/1x/outline_power_settings_new_black_48dp.png",
       "style": "utility",
-      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/action/power_settings_new/materialiconsoutlined/48dp/1x/outline_power_settings_new_black_48dp.png",
       "background": "#171313",
       "background_hover": "#302020",
       "border": "#806060",
@@ -343,6 +340,5 @@
       "width_percent": 0.165,
       "height_percent": 0.05
     }
-  ],
-  "announcement_navigation_gap": 12
+  ]
 }
