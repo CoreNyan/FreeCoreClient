@@ -188,6 +188,46 @@
       "height_percent": 0.085
     },
     {
+      "label": "加入游戏（联通线路）",
+      "value": "lt.lynnhma.xyz",
+      "action": "server",
+      "style": "primary",
+      "subtitle": "lt.lynnhma.xyz",
+      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "background": "#090909",
+      "background_hover": "#202020",
+      "border": "#E0E0E0",
+      "border_hover": "#FFFFFF",
+      "corner_cut": 8,
+      "icon_size": 24,
+      "text_offset_x": 4,
+      "animation_speed": 1.15,
+      "x_percent": 0.35,
+      "y_percent": 0.54,
+      "width_percent": 0.28,
+      "height_percent": 0.075
+    },
+    {
+      "label": "加入游戏（电信线路）",
+      "value": "dx.lynnhma.xyz",
+      "action": "server",
+      "style": "primary",
+      "subtitle": "dx.lynnhma.xyz",
+      "icon_url": "https://raw.githubusercontent.com/google/material-design-icons/master/png/av/play_arrow/materialiconsoutlined/48dp/1x/outline_play_arrow_black_48dp.png",
+      "background": "#090909",
+      "background_hover": "#202020",
+      "border": "#E0E0E0",
+      "border_hover": "#FFFFFF",
+      "corner_cut": 8,
+      "icon_size": 24,
+      "text_offset_x": 4,
+      "animation_speed": 1.15,
+      "x_percent": 0.65,
+      "y_percent": 0.54,
+      "width_percent": 0.28,
+      "height_percent": 0.075
+    },
+    {
       "label": "单人游戏",
       "value": "",
       "action": "singleplayer",
@@ -203,7 +243,7 @@
       "text_offset_x": 2,
       "animation_speed": 1.0,
       "x_percent": 0.5,
-      "y_percent": 0.56,
+      "y_percent": 0.62,
       "width_percent": 0.34,
       "height_percent": 0.055
     },
@@ -222,7 +262,7 @@
       "icon_size": 20,
       "text_offset_x": 2,
       "x_percent": 0.5,
-      "y_percent": 0.63,
+      "y_percent": 0.69,
       "width_percent": 0.34,
       "height_percent": 0.055
     },
@@ -242,7 +282,7 @@
       "text_offset_x": 2,
       "animation_speed": 1.0,
       "x_percent": 0.5,
-      "y_percent": 0.7,
+      "y_percent": 0.76,
       "width_percent": 0.34,
       "height_percent": 0.055
     },
@@ -261,7 +301,7 @@
       "icon_size": 20,
       "text_offset_y": 0,
       "x_percent": 0.5,
-      "y_percent": 0.77,
+      "y_percent": 0.83,
       "width_percent": 0.34,
       "height_percent": 0.055
     },
@@ -279,7 +319,7 @@
       "icon_size": 18,
       "text_offset_x": 0,
       "x_percent": 0.41,
-      "y_percent": 0.85,
+      "y_percent": 0.9,
       "width_percent": 0.165,
       "height_percent": 0.05
     },
@@ -299,7 +339,7 @@
       "width": 180,
       "height": 34,
       "x_percent": 0.59,
-      "y_percent": 0.85,
+      "y_percent": 0.9,
       "width_percent": 0.165,
       "height_percent": 0.05
     }
